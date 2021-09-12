@@ -1,7 +1,8 @@
 from sqlite3.dbapi2 import Cursor
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, g, jsonify, request
 from werkzeug.security import generate_password_hash
 
+from .auth import login_required
 from .db import get_db
 
 blueprint = Blueprint("users", __name__, url_prefix="/users")
@@ -34,6 +35,7 @@ def create_user():
     return jsonify({"id": cursor.lastrowid}), 201
 
 @blueprint.route("/", methods=["GET"])
+@login_required
 def list_users():
     db = get_db()
 
@@ -55,6 +57,7 @@ def list_users():
 
 
 @blueprint.route("/<int:user_id>/", methods=["GET"])
+@login_required
 def get_user(user_id):
     db = get_db()
 
@@ -74,7 +77,11 @@ def get_user(user_id):
 
 
 @blueprint.route("/<int:user_id>/", methods=["PUT"])
+@login_required
 def update_user(user_id):
+    if user_id != g.user["id"]:
+        return {"error": "Permission denied"}, 401
+
     data = request.json
 
     first_name = data.get("first_name")
@@ -99,7 +106,11 @@ def update_user(user_id):
 
 
 @blueprint.route("/<int:user_id>/", methods=["DELETE"])
+@login_required
 def delete_user(user_id):
+    if user_id != g.user["id"]:
+        return {"error": "Permission denied"}, 401
+
     db = get_db()
 
     db.execute("DELETE FROM user WHERE id=?", (user_id,))
