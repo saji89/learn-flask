@@ -6,8 +6,7 @@ def create_app():
 
     app.config.from_pyfile("config.py", silent=True)
 
-    @app.route("/")
-    def hello():
-        return {"message": "Hello, World!", "secret_key": app.config["SECRET_KEY"]}
+    from . import db
+    db.init_app(app)
 
     return app
